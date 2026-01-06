@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAS SMART 数据监控</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .error {
+            color: red;
+            text-align: center;
+            padding: 20px;
+        }
+        .refresh-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            float: right;
+            margin-bottom: 10px;
+        }
+        .refresh-btn:hover {
+            background-color: #45a049;
+        }
+        .data-value {
+            font-weight: bold;
+        }
+        .read-data {
+            color: #2196F3;
+        }
+        .write-data {
+            color: #FF9800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NAS SMART 数据监控</h1>
+        <button class="refresh-btn" onclick="loadSmartData()">刷新数据</button>
+        <div id="smart-data-container">
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载完成后自动获取数据
+        window.onload = function() {
+            loadSmartData();
+        };
+
+        function loadSmartData() {
+            const container = document.getElementById('smart-data-container');
+            container.innerHTML = '<div class="loading">加载中...</div>';
+
+            // 发起API请求获取数据
+            fetch('/api/v1/device_info/smart-data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        renderTable(data.data);
+                    } else {
+                        container.innerHTML = `<div class="error">错误: ${data.message}</div>`;
+                    }
+                })
+                .catch(error => {
+                    container.innerHTML = `<div class="error">请求失败: ${error.message}</div>`;
+                });
+        }
+
+        function renderTable(data) {
+            const container = document.getElementById('smart-data-container');
+
+            if (data.length === 0) {
+                container.innerHTML = '<div class="loading">暂无数据</div>';
+                return;
+            }
+
+            let tableHtml = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>NAS IP</th>
+                            <th>设备</th>
+                            <th>时间戳</th>
+                            <th>读取数据量 (GB)</th>
+                            <th>写入数据量 (GB)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.forEach(item => {
+                tableHtml += `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td>${item.nas_ip}</td>
+                        <td>${item.device}</td>
+                        <td>${item.timestamp}</td>
+                        <td class="data-value read-data">${item.data_units_read_gb !== null ? item.data_units_read_gb : 'N/A'}</td>
+                        <td class="data-value write-data">${item.data_units_written_gb !== null ? item.data_units_written_gb : 'N/A'}</td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = tableHtml;
+        }
+    </script>
+</body>
+</html>
