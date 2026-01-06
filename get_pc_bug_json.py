@@ -36,7 +36,7 @@ search_data = {
 
 bugs = pcc.get_format_bug_info(search_data)
 
-bug_info_file = Path(f"bug_info_{Utils.get_time('%Y%m%d%H%M%S%f')}.json")
+bug_info_file = Path(f"data/bug_info_{Utils.get_time('%Y%m%d%H%M%S%f')}.json")
 print(f"保存文件: {bug_info_file}")
 
 json.dump(bugs, bug_info_file.open("w", encoding="utf-8"), ensure_ascii=False)
