@@ -1,65 +1,27 @@
 import requests
 import json
-import os
 import time
-import base64
 from urllib3.exceptions import InsecureRequestWarning
-from PIL import Image
-import re
 from bs4 import BeautifulSoup
 
+from conf.yunxiao_web_conf import (
+    APIPOST_CSRF_TOKEN,
+    COOKIE,
+    PRIORITY_MAP,
+    SERIOUS_LEVEL_MAP,
+    STATUS_MAP,
+    DEFAULT_STATUS_ID,
+    ASSIGNEE_MAP,
+    USER_ID,
+    WORKITEM_TYPE_ID,
+    PROJECT_SPACE_ID,
+    ORGANIZATION_ID,
+    TENANT_ID,
+    PROJECT_ID,
+    CREATE_BUG_URL,
+)
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
-# -------------------------- 核心配置 --------------------------
-TENANT_ID = "6064398b5b9520fa3cfe8090"
-PROJECT_ID = "42095753da5a500edb73d8c098"
-PROJECT_SPACE_ID = "42095753da5a500edb73d8c098"
-USER_ID = "69363a48f95578dee4f984b3"
-ORGANIZATION_ID = "6064398b5b9520fa3cfe8090"
-WORKITEM_TYPE_ID = "37da3a07df4d08aef2e3b393"
-DEFAULT_STATUS_ID = "df20e9a65f57eab0bbfe946fbd"  # 默认状态ID
-# SPRINT_IDS_DEFAULT = ["565109778f6ca44653bc6bd66f"]
-
-# 优先级/严重程度/状态/处理人映射
-PRIORITY_MAP = {
-    "最高": "a2ef76837be379de92a236ea96",
-    "较高": "4fc7fdc14893848bcae822d4ef",
-    "一般": "7956b23e9d26f0e97d3274fa86",
-    "较低": "9810eccc48e35cb80852ef717e"
-}
-SERIOUS_LEVEL_MAP = {
-    "致命": "4125fbce94f1404accde51af17",
-    "严重": "221d2b06bc3b0eef0c8ededb03",
-    "一般": "8c1eca1f6ee1882dec8789b25a",
-    "建议": "8cffbfa06b1faa2ebf3c2807bd"
-}
-STATUS_MAP = {
-    "修复完成": "11ba1ffa50f92fee3f529c666a",
-    "再次打开": "30",
-    "挂起": "df20e9a65f57eab0bbfe946fbd",
-    "处理中": "100010",
-    "关闭": "100085",
-    "新提交": "a0b2e1cb84ed8289494bb7fb14",
-    "保持观察": "11ba1ffa50f92fee3f529c666a"}
-
-ASSIGNEE_MAP = {
-    "刘伟科": "60c1919aaa6381038e49362e",
-    "查智文": "60643979e5ccc4277855ad35",
-    "许铭宏": "692ff7aea9444359a9152c2d",
-    "王强": "60c1919a750bbcd1c05a0e12",
-    "俞尚": "69081fe719f260d93e5da3ff",
-    "Minisform-测试组": "692ff7aea9444359a9152c2d",
-    "曹欣哲": "68999586a9444359a91de631",
-    "阮贤炽": "69363bedccafad1056b41876",
-    "何琪": "69363a48f95578dee4f984b3",
-    "袁旺": "695b26cb50168a3e7ea36267"
-}
-
-# 有效Cookie和CSRF Token
-COOKIE = "**"
-APIPOST_CSRF_TOKEN = "**"
-CREATE_BUG_URL = "https://devops.aliyun.com/projex/api/workitem/workitem?_input_charset=utf-8"
 
 
 # -------------------------- 工具函数 --------------------------
@@ -96,10 +58,15 @@ def build_bug_description(html_str):
             text_content = tag.get_text(strip=True)
             if not text_content:
                 continue
-            text_html = text_content.replace('\n', '<br>')
+            text_html = text_content.replace("\n", "<br>")
             html_parts.append(f'<p style="text-align:left;line-height:1.6"><span>{text_html}</span></p>')
-            jsonml_nodes.append(["p", {"style": "text-align:left;line-height:1.6"},
-                                 ["span", {"data-type": "text"}, ["span", {"data-type": "leaf"}, text_content]]])
+            jsonml_nodes.append(
+                [
+                    "p",
+                    {"style": "text-align:left;line-height:1.6"},
+                    ["span", {"data-type": "text"}, ["span", {"data-type": "leaf"}, text_content]],
+                ]
+            )
         elif tag.name == "img":
             img_src = tag.get("src", "")
             img_alt = tag.get("alt", "未命名图片")
@@ -110,23 +77,46 @@ def build_bug_description(html_str):
             align_style = "text-align:center;margin:16px 0;"
             if "text-align" in img_style:
                 align_style = img_style + ";margin:16px 0;"
-            img_html = f'<p style="{align_style}"><img src="{img_src}" style="width:auto;height:auto;max-width:100%" /></p>'
+            img_html = (
+                f'<p style="{align_style}"><img src="{img_src}" style="width:auto;height:auto;max-width:100%" /></p>'
+            )
             html_parts.append(img_html.strip())
-            jsonml_nodes.append(["p", {"style": align_style}, ["img",
-                                                               {"id": f"img_{current_time}_{int(time.time() * 1000)}",
-                                                                "name": img_alt, "size": img_size, "width": "auto",
-                                                                "height": "auto", "rotation": 0, "src": img_src}]])
+            jsonml_nodes.append(
+                [
+                    "p",
+                    {"style": align_style},
+                    [
+                        "img",
+                        {
+                            "id": f"img_{current_time}_{int(time.time() * 1000)}",
+                            "name": img_alt,
+                            "size": img_size,
+                            "width": "auto",
+                            "height": "auto",
+                            "rotation": 0,
+                            "src": img_src,
+                        },
+                    ],
+                ]
+            )
     final_html = f'<article class="4ever-article">{"".join(html_parts)}</article>'
     final_jsonml = ["root", {}] + jsonml_nodes
     return {"htmlValue": final_html.strip(), "jsonMLValue": final_jsonml}
 
 
 def build_comment_content(comment_text):
-    comment_html = comment_text.replace('\n', '<br>')
+    comment_html = comment_text.replace("\n", "<br>")
     rich_content = {
         "htmlValue": f'<article class="4ever-article"><p style="text-align:left;line-height:1.6">{comment_html}</p></article>',
-        "jsonMLValue": ["root", {}, ["p", {"style": "text-align:left;line-height:1.6"},
-                                     ["span", {"data-type": "text"}, ["span", {"data-type": "leaf"}, comment_text]]]]
+        "jsonMLValue": [
+            "root",
+            {},
+            [
+                "p",
+                {"style": "text-align:left;line-height:1.6"},
+                ["span", {"data-type": "text"}, ["span", {"data-type": "leaf"}, comment_text]],
+            ],
+        ],
     }
     return rich_content
 
@@ -160,9 +150,9 @@ def create_single_bug(bug_dict, max_retry=2):
     state_name = state_name.strip()
 
     # 拼接描述（确保链接必显）
-    extra_html = f'''<hr style="margin:20px 0;border:none;border-top:1px solid #eee;" />
+    extra_html = f"""<hr style="margin:20px 0;border:none;border-top:1px solid #eee;" />
 <p style="text-align:left;line-height:1.6">由 {created_by} 在 {created_time} 创建</p>
-<p style="text-align:left;line-height:1.6">pingcode链接：<a href="{bug_url}" target="_blank" style="color:#1890ff;text-decoration:underline;">{bug_url if bug_url else "无"}</a></p>'''
+<p style="text-align:left;line-height:1.6">pingcode链接：<a href="{bug_url}" target="_blank" style="color:#1890ff;text-decoration:underline;">{bug_url if bug_url else "无"}</a></p>"""
     html_content = original_html + extra_html
 
     bug_desc = build_bug_description(html_content)
@@ -209,8 +199,10 @@ def create_single_bug(bug_dict, max_retry=2):
         "creator": USER_ID,
         "modifier": USER_ID,
         # "sprint": SPRINT_IDS_DEFAULT,
-        "fieldValueList": [{"fieldIdentifier": "priority", "value": priority_id},
-                           {"fieldIdentifier": "seriousLevel", "value": severity_id}],
+        "fieldValueList": [
+            {"fieldIdentifier": "priority", "value": priority_id},
+            {"fieldIdentifier": "seriousLevel", "value": severity_id},
+        ],
         "identifierPath": None,
         "parentIdentifier": None,
         "directory": None,
@@ -220,7 +212,7 @@ def create_single_bug(bug_dict, max_retry=2):
         "serialNumber": None,
         "gmtCreate": None,
         "gmtModified": None,
-        "csrfToken": csrf_token
+        "csrfToken": csrf_token,
     }
 
     headers = {
@@ -232,14 +224,15 @@ def create_single_bug(bug_dict, max_retry=2):
         "last-workspace": "6064398b5b9520fa3cfe8090",
         "priority": "u=1, i",
         "web-last-workspace": "6064398b5b9520fa3cfe8090",
-        "x-requested-with": "XMLHttpRequest"
+        "x-requested-with": "XMLHttpRequest",
     }
 
     # 超时重试
     for retry in range(max_retry + 1):
         try:
-            response = requests.post(CREATE_BUG_URL, headers=headers, data=json.dumps(bug_data, ensure_ascii=False),
-                                     timeout=30, verify=False)
+            response = requests.post(
+                CREATE_BUG_URL, headers=headers, data=json.dumps(bug_data, ensure_ascii=False), timeout=30, verify=False
+            )
             response.encoding = "utf-8"
             result = response.json()
 
@@ -275,7 +268,9 @@ def create_single_comment(bug_identifier, comment_text="", comment_user_id=USER_
     if not csrf_token:
         print(f"❌ 缺少CSRF Token")
         return False
-    COMMENT_URL = f"https://devops.aliyun.com/projex/api/workitem/workitem/{bug_identifier}/comment?_input_charset=utf-8"
+    COMMENT_URL = (
+        f"https://devops.aliyun.com/projex/api/workitem/workitem/{bug_identifier}/comment?_input_charset=utf-8"
+    )
     comment_data = {
         "content": json.dumps(comment_content, ensure_ascii=False),
         "contentFormat": "RICHTEXT",
@@ -285,7 +280,7 @@ def create_single_comment(bug_identifier, comment_text="", comment_user_id=USER_
         "projectId": PROJECT_ID,
         "tenantId": TENANT_ID,
         "creator": comment_user_id,
-        "modifier": comment_user_id
+        "modifier": comment_user_id,
     }
     headers = {
         "Cookie": COOKIE,
@@ -296,12 +291,17 @@ def create_single_comment(bug_identifier, comment_text="", comment_user_id=USER_
         "last-workspace": "6064398b5b9520fa3cfe8090",
         "priority": "u=1, i",
         "web-last-workspace": "6064398b5b9520fa3cfe8090",
-        "x-requested-with": "XMLHttpRequest"
+        "x-requested-with": "XMLHttpRequest",
     }
     for retry in range(max_retry):
         try:
-            response = requests.post(COMMENT_URL, headers=headers, data=json.dumps(comment_data, ensure_ascii=False),
-                                     timeout=15, verify=False)
+            response = requests.post(
+                COMMENT_URL,
+                headers=headers,
+                data=json.dumps(comment_data, ensure_ascii=False),
+                timeout=15,
+                verify=False,
+            )
             result = response.json()
             if response.status_code == 200 and result.get("code") == 200:
                 print(f"✅ Bug[{bug_identifier}] 评论添加成功（评论者：{comment_user_id}）")
@@ -396,10 +396,20 @@ if __name__ == "__main__":
                 ],
             },
             "columns": [
-                "identifier", "title", "description",
-                "state", "status",  # 状态相关字段
-                "url", "web_url", "workitem_url",  # 链接相关字段
-                "priority", "severity", "assignee", "created_by", "created_at", "comments"
+                "identifier",
+                "title",
+                "description",
+                "state",
+                "status",  # 状态相关字段
+                "url",
+                "web_url",
+                "workitem_url",  # 链接相关字段
+                "priority",
+                "severity",
+                "assignee",
+                "created_by",
+                "created_at",
+                "comments",
             ],
             "is_brief": 1,
             "pi": 0,
@@ -430,7 +440,7 @@ if __name__ == "__main__":
                 "created_by": bug.get("created_by", "未知用户"),
                 "created_at": bug.get("created_at", 0),
                 "bug_url": raw_url,
-                "comments": bug.get("comments", [])
+                "comments": bug.get("comments", []),
             }
             mapped_bugs.append(mapped_bug)
 
