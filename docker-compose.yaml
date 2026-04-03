@@ -1,0 +1,14 @@
+services:
+  sync_html:
+    container_name: feishu_sync
+    image: feishu_ping_code_sync:latest
+    build:
+      context: ./
+      dockerfile: ./dockerfile
+    ports:
+      - "8080:5432"
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - ./conf:/app/conf
+    restart: unless-stopped

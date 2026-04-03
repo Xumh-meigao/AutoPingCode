@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飞书项目与PingCode集成工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: white;
+            font-size: 24px;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        /* 将原来的 input[type="text"] 修改为包含密码输入框 */
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        /* 同时更新焦点状态的选择器 */
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-section {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .result-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result-error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .task-status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #e9ecef;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 14px;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .card-container {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>飞书项目与PingCode集成工具</h1>
+        <p class="subtitle">自动化同步Bug信息和Sprint数据</p>
+    </header>
+
+    <div class="card-container">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">🐛</div>
+                <h2 class="card-title">更新Bug信息</h2>
+            </div>
+            <p>从PingCode获取最新的Bug数据并更新到飞书项目中</p>
+
+            <button id="updateBugBtn" class="btn">异步更新所有Bug信息</button>
+
+            <div id="bugLoading" class="loading">
+                <div class="spinner"></div>
+                <p>正在提交任务，请稍候...</p>
+            </div>
+
+            <div id="bugTaskStatus" class="task-status">
+                <div>任务ID: <span id="bugTaskId"></span></div>
+                <div>状态: <span id="bugTaskStatusText">等待中</span></div>
+                <div class="progress-bar">
+                    <div id="bugProgressFill" class="progress-fill"></div>
+                </div>
+                <div id="bugProgressText" class="progress-text">0%</div>
+            </div>
+
+            <div id="bugResult" class="result-section"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">📈</div>
+                <h2 class="card-title">更新Sprint Bugs</h2>
+            </div>
+            <p>更新指定Sprint下的所有Bug列表</p>
+
+            <div class="form-group">
+                <label for="sprintName">Sprint名称:</label>
+                <input type="text" id="sprintName" placeholder="请输入Sprint名称，例如：Sprint 1">
+            </div>
+
+            <button id="updateSprintBtn" class="btn">异步更新Sprint Bugs</button>
+
+            <div id="sprintLoading" class="loading">
+                <div class="spinner"></div>
+                <p>正在提交任务，请稍候...</p>
+            </div>
+
+            <div id="sprintTaskStatus" class="task-status">
+                <div>任务ID: <span id="sprintTaskId"></span></div>
+                <div>Sprint: <span id="sprintTaskName"></span></div>
+                <div>状态: <span id="sprintTaskStatusText">等待中</span></div>
+                <div class="progress-bar">
+                    <div id="sprintProgressFill" class="progress-fill"></div>
+                </div>
+                <div id="sprintProgressText" class="progress-text">0%</div>
+            </div>
+
+            <div id="sprintResult" class="result-section"></div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">💾</div>
+                <h2 class="card-title">获取NAS SMART信息</h2>
+            </div>
+            <p>获取指定NAS设备的磁盘SMART信息并存储到数据库</p>
+
+            <div class="form-group">
+                <label for="nasIp">NAS IP地址:</label>
+                <input type="text" id="nasIp" placeholder="请输入NAS设备IP地址">
+            </div>
+
+            <div class="form-group">
+                <label for="nasUser">用户名:</label>
+                <input type="text" id="nasUser" placeholder="请输入登录用户名">
+            </div>
+
+            <div class="form-group">
+                <label for="nasPassword">密码 (可选):</label>
+                <input type="password" id="nasPassword" placeholder="请输入登录密码">
+            </div>
+
+            <button id="getSmartBtn" class="btn">获取SMART信息</button>
+
+            <!-- New navigation button -->
+            <button id="viewSmartBtn" class="btn"
+                    style="margin-top: 10px; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);">
+                查看SMART数据报表
+            </button>
+
+            <div id="smartLoading" class="loading">
+                <div class="spinner"></div>
+                <p>正在获取SMART信息，请稍候...</p>
+            </div>
+
+            <div id="smartResult" class="result-section"></div>
+        </div>
+
+    </div>
+
+    <footer>
+        <p>飞书项目与PingCode集成工具 © 2025</p>
+    </footer>
+</div>
+
+<script>
+    // API基础URL配置
+    const API_BASE_URL = '/api/v1/feishu_pingcode';
+
+    // 任务轮询间隔（毫秒）
+    const POLLING_INTERVAL = 3000;
+
+    // 异步任务管理器
+    class AsyncTaskManager {
+        constructor() {
+            this.activeTasks = new Map();
+        }
+
+        // 提交异步任务
+        async submitTask(apiEndpoint, requestData = null) {
+            const response = requestData
+                ? await fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                })
+                : await fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+            return await response.json();
+        }
+
+        // 轮询任务状态
+        pollTaskStatus(taskId, onStatusUpdate, onResult) {
+            const poll = async () => {
+                try {
+                    // 查询任务状态
+                    const statusResponse = await fetch(`${API_BASE_URL}/tasks/${taskId}`);
+                    const statusResult = await statusResponse.json();
+
+                    if (statusResult.code === 0) {
+                        // 获取包含进度信息的状态数据
+                        const statusData = statusResult.data;
+                        onStatusUpdate(statusData);
+
+                        if (statusData.status === 'completed' || statusData.status === 'failed') {
+                            // 获取任务结果
+                            const resultResponse = await fetch(`${API_BASE_URL}/tasks/${taskId}/result`);
+                            const result = await resultResponse.json();
+                            onResult(result);
+                            return;
+                        }
+                    } else {
+                        onResult(statusResult);
+                        return;
+                    }
+
+                    // 继续轮询
+                    setTimeout(poll, POLLING_INTERVAL);
+                } catch (error) {
+                    onResult({
+                        code: 2,
+                        message: "轮询任务状态失败",
+                        data: {
+                            error: error.message
+                        }
+                    });
+                }
+            };
+
+            // 开始轮询
+            poll();
+        }
+    }
+
+    // 创建任务管理器实例
+    const taskManager = new AsyncTaskManager();
+
+    // 更新Bug信息按钮事件
+    document.getElementById('updateBugBtn').addEventListener('click', async function() {
+        const btn = this;
+        const loadingEl = document.getElementById('bugLoading');
+        const taskStatusEl = document.getElementById('bugTaskStatus');
+        const resultEl = document.getElementById('bugResult');
+        const taskIdEl = document.getElementById('bugTaskId');
+        const statusTextEl = document.getElementById('bugTaskStatusText');
+        const progressFillEl = document.getElementById('bugProgressFill');
+        const progressTextEl = document.getElementById('bugProgressText');
+
+        // 禁用按钮并显示加载状态
+        btn.disabled = true;
+        loadingEl.style.display = 'block';
+        taskStatusEl.style.display = 'none';
+        resultEl.style.display = 'none';
+
+        try {
+            // 提交异步任务
+            const response = await taskManager.submitTask(`${API_BASE_URL}/bugs/update/async`);
+
+            if (response.code === 0) {
+                const taskId = response.data.task_id;
+
+                // 显示任务信息
+                taskIdEl.textContent = taskId;
+                statusTextEl.textContent = '已提交';
+                progressFillEl.style.width = '0%';
+                progressTextEl.textContent = '0%';
+                taskStatusEl.style.display = 'block';
+                loadingEl.style.display = 'none';
+
+                // 开始轮询任务状态
+                taskManager.pollTaskStatus(
+                    taskId,
+                    (statusData) => {
+                        // 使用实际进度值更新进度条
+                        const progress = statusData.progress || 0;
+                        progressFillEl.style.width = `${progress}%`;
+                        progressTextEl.textContent = `${progress}%`;
+
+                        // 更新状态显示
+                        statusTextEl.textContent = statusData.status === 'completed' ? '已完成' :
+                                                 statusData.status === 'failed' ? '失败' :
+                                                 statusData.status === 'running' ? `运行中 (${progress}%)` : '处理中';
+                    },
+                    (result) => {
+                        // 显示最终结果
+                        if (result.code === 0) {
+                            showResult(resultEl, 'success', `
+                                <strong>成功更新Bug信息!</strong><br>
+                                处理总数: ${result.data.count || 0}<br>
+                                成功数量: ${result.data.success?.length || 0}<br>
+                                失败数量: ${result.data.error?.length || 0}
+                            `);
+                        } else {
+                            showResult(resultEl, 'error', `<strong>更新失败:</strong> ${result.message}`);
+                        }
+
+                        // 恢复按钮
+                        btn.disabled = false;
+                    }
+                );
+            } else {
+                showResult(resultEl, 'error', `<strong>任务提交失败:</strong> ${response.message}`);
+                btn.disabled = false;
+                loadingEl.style.display = 'none';
+            }
+        } catch (error) {
+            showResult(resultEl, 'error', `<strong>请求失败:</strong> ${error.message}`);
+            btn.disabled = false;
+            loadingEl.style.display = 'none';
+        }
+    });
+
+    // 更新Sprint Bugs按钮事件
+    document.getElementById('updateSprintBtn').addEventListener('click', async function() {
+        const btn = this;
+        const sprintName = document.getElementById('sprintName').value.trim();
+        const loadingEl = document.getElementById('sprintLoading');
+        const taskStatusEl = document.getElementById('sprintTaskStatus');
+        const resultEl = document.getElementById('sprintResult');
+        const taskIdEl = document.getElementById('sprintTaskId');
+        const taskNameEl = document.getElementById('sprintTaskName');
+        const statusTextEl = document.getElementById('sprintTaskStatusText');
+        const progressFillEl = document.getElementById('sprintProgressFill');
+        const progressTextEl = document.getElementById('sprintProgressText');
+
+        // 验证输入
+        if (!sprintName) {
+            showResult(resultEl, 'error', '<strong>错误:</strong> 请输入Sprint名称');
+            return;
+        }
+
+        // 禁用按钮并显示加载状态
+        btn.disabled = true;
+        loadingEl.style.display = 'block';
+        taskStatusEl.style.display = 'none';
+        resultEl.style.display = 'none';
+
+        try {
+            // 提交异步任务
+            const response = await taskManager.submitTask(
+                `${API_BASE_URL}/sprints/${encodeURIComponent(sprintName)}/sync-bugs/async`
+            );
+
+            if (response.code === 0) {
+                const taskId = response.data.task_id;
+
+                // 显示任务信息
+                taskIdEl.textContent = taskId;
+                taskNameEl.textContent = sprintName;
+                statusTextEl.textContent = '已提交';
+                progressFillEl.style.width = '0%';
+                progressTextEl.textContent = '0%';
+                taskStatusEl.style.display = 'block';
+                loadingEl.style.display = 'none';
+
+                // 开始轮询任务状态
+                taskManager.pollTaskStatus(
+                    taskId,
+                    (statusData) => {
+                        // 使用实际进度值更新进度条
+                        const progress = statusData.progress || 0;
+                        progressFillEl.style.width = `${progress}%`;
+                        progressTextEl.textContent = `${progress}%`;
+
+                        // 更新状态显示
+                        statusTextEl.textContent = statusData.status === 'completed' ? '已完成' :
+                                                 statusData.status === 'failed' ? '失败' :
+                                                 statusData.status === 'running' ? `运行中 (${progress}%)` : '处理中';
+                    },
+                    (result) => {
+                        // 显示最终结果
+                        if (result.code === 0) {
+                            showResult(resultEl, 'success', `
+                                <strong>成功更新Sprint Bugs!</strong><br>
+                                处理总数: ${result.data.count || 0}<br>
+                                成功数量: ${result.data.success?.length || 0}<br>
+                                失败数量: ${result.data.error?.length || 0}
+                            `);
+                        } else {
+                            showResult(resultEl, 'error', `<strong>更新失败:</strong> ${result.message}`);
+                        }
+
+                        // 恢复按钮
+                        btn.disabled = false;
+                    }
+                );
+            } else {
+                showResult(resultEl, 'error', `<strong>任务提交失败:</strong> ${response.message}`);
+                btn.disabled = false;
+                loadingEl.style.display = 'none';
+            }
+        } catch (error) {
+            showResult(resultEl, 'error', `<strong>请求失败:</strong> ${error.message}`);
+            btn.disabled = false;
+            loadingEl.style.display = 'none';
+        }
+    });
+
+    // 获取NAS SMART信息按钮事件
+    document.getElementById('getSmartBtn').addEventListener('click', async function() {
+        const btn = this;
+        const nasIp = document.getElementById('nasIp').value.trim();
+        const nasUser = document.getElementById('nasUser').value.trim();
+        const nasPassword = document.getElementById('nasPassword').value;
+        const loadingEl = document.getElementById('smartLoading');
+        const resultEl = document.getElementById('smartResult');
+
+        // 验证输入
+        if (!nasIp) {
+            showResult(resultEl, 'error', '<strong>错误:</strong> 请输入NAS IP地址');
+            return;
+        }
+
+        if (!nasUser) {
+            showResult(resultEl, 'error', '<strong>错误:</strong> 请输入用户名');
+            return;
+        }
+
+        // 禁用按钮并显示加载状态
+        btn.disabled = true;
+        loadingEl.style.display = 'block';
+        resultEl.style.display = 'none';
+
+        try {
+            // 构建请求数据
+            const requestData = {
+                nas_ip: nasIp,
+                nas_user: nasUser
+            };
+
+            // 如果提供了密码，则添加到请求数据中
+            if (nasPassword) {
+                requestData.nas_password = nasPassword;
+            }
+
+            // 发送POST请求获取SMART信息
+            const response = await fetch('/api/v1/device_info/fetch-smart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            const result = await response.json();
+
+            if (result.code === 0) {
+                showResult(resultEl, 'success', `<strong>成功获取SMART信息!</strong><br>记录ID: ${result.data.record_id}`);
+            } else {
+                showResult(resultEl, 'error', `<strong>获取失败:</strong> ${result.message}`);
+            }
+        } catch (error) {
+            showResult(resultEl, 'error', `<strong>请求失败:</strong> ${error.message}`);
+        } finally {
+            // 恢复按钮
+            btn.disabled = false;
+            loadingEl.style.display = 'none';
+        }
+    });
+    // Add this after the existing getSmartBtn event listener
+    document.getElementById('viewSmartBtn').addEventListener('click', function() {
+        // Navigate to the SMART monitor page
+        window.location.href = '/smart-monitor';
+    });
+
+
+    // 显示结果函数
+    function showResult(element, type, message) {
+        element.innerHTML = message;
+        element.className = `result-section result-${type}`;
+        element.style.display = 'block';
+    }
+
+    // 页面加载完成后的初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('飞书项目与PingCode集成工具已加载');
+    });
+</script>
+</body>
+</html>
